@@ -1,3 +1,4 @@
 /node_modules
 .idea
 .report.db
+.settings.js
