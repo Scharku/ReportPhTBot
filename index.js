@@ -3,7 +3,7 @@ const TelegramApi = require('node-telegram-bot-api');
 const sqlite3 = require('sqlite3').verbose();
 
 //Подключение бота
-const token = '7108787449:AAELIrnlx6bFpJwEdvksOJSwTWGziv1jLWA';
+const token = '7177746947:AAEyRnuw5ffE2PcN6G4gv67jBTuQOpnGWrI';
 const bot = new TelegramApi(token, { polling: true });
 
 //База данных пользователей.
@@ -26,6 +26,40 @@ bot.setMyCommands([
 ])
 
 //Обработчик событий
+
+bot.onText(/\/help/, (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+
+    // Проверяем наличие пользователя в базе данных
+    users.get('SELECT * FROM users WHERE telegram_id = ?', [userId], (err, userRow) => {
+        if (err) {
+            console.error('Ошибка при проверке наличия пользователя в базе данных:', err);
+            return bot.sendMessage(chatId, 'Произошла ошибка при проверке наличия пользователя в базе данных.');
+        }
+
+        // Если пользователя не найден в базе данных, отправляем сообщение о доступе
+        if (!userRow) {
+            return bot.sendMessage(chatId, 'У вас нет доступа к этой команде.');
+        }
+
+        // Если пользователь найден, отправляем сообщение с описанием функций
+        return bot.sendMessage(chatId, 'Бот работает только для тех, кто находится в базе данных. ' +
+            'Базу данных пользователей может обновлять только старший куратор (в целях безопасности).' +
+            '\n\nТеперь немного по функциям, которые есть:' +
+            '\n/report - Сдаешь отчет после выполненной работы.' +
+            '\n/check - Посмотреть список отчетов.' +
+            '\n\nТолько СтК имеет доступ к следующим функциям:' +
+            '\n/update - Для очищения отчетов после проверки. Необходимо делать каждое утро, чтобы была возможность сдать работу за день.' +
+            '\n/add - Добавить пользователя для использования бота.' +
+            '\nПример - "/add user userID"' +
+            '\n/del - Удаление пользователя из бота.' +
+            '\nПример - "/del user userID"' +
+            '\n/users - Посмотреть весь список пользователей.' +
+            '\n\nБот все еще не умеет готовить еду. Потерпите!');
+    });
+});
+
 bot.onText(/\/report/, (msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
@@ -106,7 +140,7 @@ bot.onText(/\/update/, (msg) => {
     const userId = msg.from.id;
 
     // Проверяем наличие второго пользователя в базе данных
-    users.get('SELECT telegram_id FROM users ORDER BY id LIMIT 1 OFFSET 0', (err, row) => {
+    users.get('SELECT telegram_id FROM users ORDER BY id LIMIT 1 OFFSET 1', (err, row) => {
         if (err) {
             console.error('Ошибка при получении второго пользователя из базы данных:', err);
             return bot.sendMessage(chatId, 'Произошла ошибка при получении данных из базы данных.');
@@ -126,6 +160,26 @@ bot.onText(/\/update/, (msg) => {
     });
 });
 
+bot.onText(/\/users/, (msg) => {
+    const chatId = msg.chat.id;
+
+    // Запрос к базе данных для получения списка пользователей
+    users.all('SELECT * FROM users', (err, rows) => {
+        if (err) {
+            console.error('Ошибка при получении списка пользователей из базы данных:', err);
+            return bot.sendMessage(chatId, 'Произошла ошибка при получении списка пользователей из базы данных.');
+        }
+
+        // Формируем сообщение со списком пользователей
+        let userList = 'Список пользователей:\n';
+        rows.forEach(row => {
+            userList += `Имя: ${row.username}, ID: ${row.telegram_id}\n`;
+        });
+
+        // Отправляем сообщение с списком пользователей
+        bot.sendMessage(chatId, userList);
+    });
+});
 
 bot.onText(/^\/add (.+) (\d+)$/, (msg, match) => {
     const chatId = msg.chat.id;
@@ -139,14 +193,14 @@ bot.onText(/^\/add (.+) (\d+)$/, (msg, match) => {
             return bot.sendMessage(chatId, 'Произошла ошибка при получении данных из базы данных.');
         }
         if (row && row.telegram_id === userId) { // Проверяем, является ли пользователь вторым в базе данных
-        // Добавляем пользователя в базу данных
-        users.run('INSERT INTO users (username, telegram_id) VALUES (?, ?)', [name, id], (err) => {
-            if (err) {
-                console.error('Ошибка при добавлении пользователя в базу данных:', err);
-                return bot.sendMessage(chatId, 'Произошла ошибка при добавлении пользователя в базу данных.');
-            }
-            return bot.sendMessage(chatId, `Пользователь ${name} успешно добавлен в базу данных.`);
-        }); } else {
+            // Добавляем пользователя в базу данных
+            users.run('INSERT INTO users (username, telegram_id) VALUES (?, ?)', [name, id], (err) => {
+                if (err) {
+                    console.error('Ошибка при добавлении пользователя в базу данных:', err);
+                    return bot.sendMessage(chatId, 'Произошла ошибка при добавлении пользователя в базу данных.');
+                }
+                return bot.sendMessage(chatId, `Пользователь ${name} успешно добавлен в базу данных.`);
+            }); } else {
             bot.sendMessage(chatId, 'У вас нет доступа к этой команде.');
         }
     });
@@ -165,55 +219,16 @@ bot.onText(/^\/del (.+) (\d+)$/, (msg, match) => {
             return bot.sendMessage(chatId, 'Произошла ошибка при получении данных из базы данных.');
         }
         if (row && row.telegram_id === userId) { // Проверяем, является ли пользователь вторым в базе данных
-        // Удаляем пользователя из базы данных по имени и ID
-        users.run('DELETE FROM users WHERE username = ? AND telegram_id = ?', [name, id], (err) => {
-            if (err) {
-                console.error('Ошибка при удалении пользователя из базы данных:', err);
-                return bot.sendMessage(chatId, 'Произошла ошибка при удалении пользователя из базы данных.');
-            }
-            return bot.sendMessage(chatId, `Пользователь ${name} с ID ${id} успешно удален из базы данных.`);
-        });
+            // Удаляем пользователя из базы данных по имени и ID
+            users.run('DELETE FROM users WHERE username = ? AND telegram_id = ?', [name, id], (err) => {
+                if (err) {
+                    console.error('Ошибка при удалении пользователя из базы данных:', err);
+                    return bot.sendMessage(chatId, 'Произошла ошибка при удалении пользователя из базы данных.');
+                }
+                return bot.sendMessage(chatId, `Пользователь ${name} с ID ${id} успешно удален из базы данных.`);
+            });
         } else {
             bot.sendMessage(chatId, 'У вас нет доступа к этой команде.');
         }
     });
-});
-
-bot.onText(/^\/users$/, (msg) => {
-    const chatId = msg.chat.id;
-
-    // Запрос к базе данных для получения списка пользователей
-    users.all('SELECT * FROM users', (err, rows) => {
-        if (err) {
-            console.error('Ошибка при получении списка пользователей из базы данных:', err);
-            return bot.sendMessage(chatId, 'Произошла ошибка при получении списка пользователей из базы данных.');
-        }
-
-        // Формируем сообщение со списком пользователей
-        let userList = 'Список пользователей:\n';
-        rows.forEach(row => {
-            userList += `Имя: ${row.username}, ID: ${row.telegram_id}\n`;
-        });
-
-        // Отправляем сообщение с списком пользователей в тот же чат, откуда пришла команда
-        bot.sendMessage(chatId, userList);
-    });
-});
-
-
-bot.onText(/^\/help$/, (msg) => {
-    const chatId = msg.chat.id;
- bot.sendMessage(chatId, 'Бот работает только для тех, кто находится в базе данных. ' +
-     'Базу данных пользователей может обновлять только старший куратор (в целях безопасности).' +
- '\n\nТеперь немного по функциям, которые есть:' +
- '\n/report - Сдаешь отчет после выполненной работы.' +
- '\n/check - Посмотреть список отчетов.' +
-     '\n\nТолько СтК имеет доступ к следующим функциям:' +
-     '\n/update - Для очищения отчетов после проверки. Необходимо делать каждое утро, чтобы была возможность сдать работу за день.' +
-     '\n/add - Добавить пользователя для использования бота.' +
-     '\nПример - "/add user userID"' +
-     '\n/del - Удаление пользователя из бота.' +
-     '\nПример - "/del user userID"' +
-     '\n/users - Посмотреть весь список пользователей.' +
-     '\n\nБот все еще не умеет готовить еду. Потерпите!');
 });
