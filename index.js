@@ -2,7 +2,7 @@
 const TelegramApi = require('node-telegram-bot-api');
 const sqlite3 = require('sqlite3').verbose();
 
-//Подключение бота\
+//Подключение бота
 const token = '7108787449:AAELIrnlx6bFpJwEdvksOJSwTWGziv1jLWA';
 const bot = new TelegramApi(token, { polling: true });
 
@@ -16,6 +16,7 @@ report.run('CREATE TABLE IF NOT EXISTS report (id INTEGER PRIMARY KEY, text TEXT
 
 //Меню команд.
 bot.setMyCommands([
+    {command: '/help', description: 'Помощь'},
     {command: '/report', description: 'Сдать отчет в этот день'},
     {command: '/check', description: 'Проверить наличие отчета'},
     {command: '/update', description: 'Обновляет БД'},
@@ -58,7 +59,7 @@ bot.onText(/\/report/, (msg) => {
             report.run('INSERT INTO report (text, date) VALUES (?, ?)', [username, currentDate], (err) => {
                 if (err) {
                     console.error('Ошибка при добавлении записи в базу данных:', err);
-                    return bot.sendMessage(chatId, 'Произошла ошибка при добавлении отчета в базу данных.');
+                    return bot.sendMessage(chatId, 'Произошла ошибка при добавлении отчета в базу данных.', err);
                 }
                 return bot.sendMessage(chatId, 'Отчет успешно добавлен в базу данных.');
             });
@@ -83,7 +84,7 @@ bot.onText(/\/check/, (msg) => {
         report.all('SELECT id, text, date FROM report', (err, rows) => {
             if (err) {
                 console.error('Ошибка при получении отчетов из базы данных:', err);
-                return bot.sendMessage(chatId, 'Произошла ошибка при получении отчетов из базы данных.');
+                return bot.sendMessage(chatId, 'Произошла ошибка при получении отчетов из базы данных.', err);
             }
             if (rows.length === 0) {
                 return bot.sendMessage(chatId, 'В базе данных нет отчетов.');
@@ -115,7 +116,7 @@ bot.onText(/\/update/, (msg) => {
             report.run('DELETE FROM report', (err) => {
                 if (err) {
                     console.error('Ошибка при удалении записей из базы данных:', err);
-                    return bot.sendMessage(chatId, 'Произошла ошибка при удалении базы данных.');
+                    return bot.sendMessage(chatId, 'Произошла ошибка при удалении базы данных.', err);
                 }
                 return bot.sendMessage(chatId, 'База данных успешно удалена.');
             });
@@ -185,7 +186,7 @@ bot.onText(/^\/users$/, (msg) => {
     users.get('SELECT * FROM users WHERE telegram_id = ?', [userId], (err, userRow) => {
         if (err) {
             console.error('Ошибка при проверке наличия пользователя в базе данных:', err);
-            return bot.sendMessage(chatId, 'Произошла ошибка при проверке наличия пользователя в базе данных.');
+            return bot.sendMessage(chatId, 'Произошла ошибка при проверке наличия пользователя в базе данных.', err);
         }
 
         // Если пользователя нет в базе данных, то выходим из функции и отправляем сообщение о доступе
