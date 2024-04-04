@@ -156,7 +156,7 @@ bot.onText(/^\/del (.+) (\d+)$/, (msg, match) => {
     const chatId = msg.chat.id;
     const name = match[1]; // Получаем имя пользователя из сообщения
     const id = match[2]; // Получаем идентификатор пользователя из сообщения
-    const userId = msg.from.id;
+    const userId = msg.chat.id;
 
     // Проверяем наличие второго пользователя в базе данных
     users.get('SELECT telegram_id FROM users ORDER BY id LIMIT 1 OFFSET 0', (err, row) => {
@@ -181,7 +181,7 @@ bot.onText(/^\/del (.+) (\d+)$/, (msg, match) => {
 
 bot.onText(/^\/users$/, (msg) => {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
+    const userId = msg.chat.id;
 
     users.get('SELECT * FROM users WHERE telegram_id = ?', [userId], (err, userRow) => {
         if (err) {
