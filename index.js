@@ -159,7 +159,7 @@ bot.onText(/^\/del (.+) (\d+)$/, (msg, match) => {
     const userId = msg.from.id;
 
     // Проверяем наличие второго пользователя в базе данных
-    users.get('SELECT telegram_id FROM users ORDER BY id LIMIT 1 OFFSET 1', (err, row) => {
+    users.get('SELECT telegram_id FROM users ORDER BY id LIMIT 1 OFFSET 0', (err, row) => {
         if (err) {
             console.error('Ошибка при получении второго пользователя из базы данных:', err);
             return bot.sendMessage(chatId, 'Произошла ошибка при получении данных из базы данных.');
