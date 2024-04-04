@@ -156,7 +156,7 @@ bot.onText(/^\/del (.+) (\d+)$/, (msg, match) => {
     const chatId = msg.chat.id;
     const name = match[1]; // Получаем имя пользователя из сообщения
     const id = match[2]; // Получаем идентификатор пользователя из сообщения
-    const userId = msg.chat.id;
+    const userId = msg.from.id;
 
     // Проверяем наличие второго пользователя в базе данных
     users.get('SELECT telegram_id FROM users ORDER BY id LIMIT 1 OFFSET 0', (err, row) => {
@@ -181,35 +181,22 @@ bot.onText(/^\/del (.+) (\d+)$/, (msg, match) => {
 
 bot.onText(/^\/users$/, (msg) => {
     const chatId = msg.chat.id;
-    const userId = msg.chat.id;
 
-    users.get('SELECT * FROM users WHERE telegram_id = ?', [userId], (err, userRow) => {
+    // Запрос к базе данных для получения списка пользователей
+    users.all('SELECT * FROM users', (err, rows) => {
         if (err) {
-            console.error('Ошибка при проверке наличия пользователя в базе данных:', err);
-            return bot.sendMessage(chatId, 'Произошла ошибка при проверке наличия пользователя в базе данных.', err);
+            console.error('Ошибка при получении списка пользователей из базы данных:', err);
+            return bot.sendMessage(chatId, 'Произошла ошибка при получении списка пользователей из базы данных.');
         }
 
-        // Если пользователя нет в базе данных, то выходим из функции и отправляем сообщение о доступе
-        if (!userRow) {
-            return bot.sendMessage(chatId, 'У вас нет доступа к этой команде.');
-        }
-
-        // Запрос к базе данных для получения списка пользователей
-        users.all('SELECT * FROM users', (err, rows) => {
-            if (err) {
-                console.error('Ошибка при получении списка пользователей из базы данных:', err);
-                return bot.sendMessage(chatId, 'Произошла ошибка при получении списка пользователей из базы данных.');
-            }
-
-            // Формируем сообщение со списком пользователей
-            let userList = 'Список пользователей:\n';
-            rows.forEach(row => {
-                userList += `Имя: ${row.username}, ID: ${row.telegram_id}\n`;
-            });
-
-            // Отправляем сообщение с списком пользователей
-            bot.sendMessage(chatId, userList);
+        // Формируем сообщение со списком пользователей
+        let userList = 'Список пользователей:\n';
+        rows.forEach(row => {
+            userList += `Имя: ${row.username}, ID: ${row.telegram_id}\n`;
         });
+
+        // Отправляем сообщение с списком пользователей в тот же чат, откуда пришла команда
+        bot.sendMessage(chatId, userList);
     });
 });
 
