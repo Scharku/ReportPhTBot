@@ -3,7 +3,7 @@ const TelegramApi = require('node-telegram-bot-api');
 const sqlite3 = require('sqlite3').verbose();
 
 //Подключение бота
-const token = '7177746947:AAEyRnuw5ffE2PcN6G4gv67jBTuQOpnGWrI';
+const token = '7108787449:AAELIrnlx6bFpJwEdvksOJSwTWGziv1jLWA';
 const bot = new TelegramApi(token, { polling: true });
 
 //База данных пользователей.
