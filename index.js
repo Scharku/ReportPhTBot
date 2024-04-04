@@ -194,24 +194,25 @@ bot.onText(/^\/users$/, (msg) => {
             return bot.sendMessage(chatId, 'У вас нет доступа к этой команде.');
         }
 
-    // Запрос к базе данных для получения списка пользователей
-    users.all('SELECT * FROM users', (err, rows) => {
-        if (err) {
-            console.error('Ошибка при получении списка пользователей из базы данных:', err);
-            return bot.sendMessage(chatId, 'Произошла ошибка при получении списка пользователей из базы данных.');
-        }
+        // Запрос к базе данных для получения списка пользователей
+        users.all('SELECT * FROM users', (err, rows) => {
+            if (err) {
+                console.error('Ошибка при получении списка пользователей из базы данных:', err);
+                return bot.sendMessage(chatId, 'Произошла ошибка при получении списка пользователей из базы данных.');
+            }
 
-        // Формируем сообщение со списком пользователей
-        let userList = 'Список пользователей:\n';
-        rows.forEach(row => {
-            userList += `Имя: ${row.username}, ID: ${row.telegram_id}\n`;
+            // Формируем сообщение со списком пользователей
+            let userList = 'Список пользователей:\n';
+            rows.forEach(row => {
+                userList += `Имя: ${row.username}, ID: ${row.telegram_id}\n`;
+            });
+
+            // Отправляем сообщение с списком пользователей
+            bot.sendMessage(chatId, userList);
         });
-
-        // Отправляем сообщение с списком пользователей
-        bot.sendMessage(chatId, userList);
-    });
     });
 });
+
 
 bot.onText(/^\/help$/, (msg) => {
     const chatId = msg.chat.id;
